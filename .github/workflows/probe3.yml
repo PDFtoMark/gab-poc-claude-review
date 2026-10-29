@@ -1,5 +1,6 @@
 name: probe3
-on: {workflow_dispatch: }
+on:
+  workflow_dispatch:
 permissions:
   contents: read
   pull-requests: write
