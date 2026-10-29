@@ -1,0 +1,34 @@
+name: probe-restore
+on:
+  pull_request:
+    types: [opened, synchronize]
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: BEFORE action - PR head config
+        run: |
+          echo "--- before .claude/settings.json"; cat .claude/settings.json || true
+          echo "--- before CLAUDE.md"; head -2 CLAUDE.md || true
+      - name: run claude action with dummy key
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        with:
+          github_token: ${{ github.token }}
+          anthropic_api_key: "sk-ant-dummy-not-a-real-key"
+          prompt: "say hi"
+          show_full_output: "true"
+      - name: AFTER action - was PR-head config neutralised
+        if: always()
+        run: |
+          echo "--- after .claude/settings.json"; cat .claude/settings.json || echo MISSING
+          echo "--- after CLAUDE.md"; head -2 CLAUDE.md || echo MISSING
+          echo "--- .claude-pr snapshot"; ls -la .claude-pr 2>/dev/null || echo NO_SNAPSHOT
