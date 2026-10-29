@@ -10,7 +10,7 @@ jobs:
   p:
     runs-on: ubuntu-latest
     steps:
-      - name: dispatch + cache + rerun boundary checks (actions: read only)
+      - name: dispatch and rerun boundary checks
         env: {GH_TOKEN: "${{ github.token }}"}
         run: |
           echo "--- dispatch another workflow"
