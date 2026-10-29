@@ -1,0 +1,22 @@
+name: probe3
+on: {workflow_dispatch: }
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  actions: read
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    steps:
+      - name: dispatch + cache + rerun boundary checks (actions: read only)
+        env: {GH_TOKEN: "${{ github.token }}"}
+        run: |
+          echo "--- dispatch another workflow"
+          gh api -X POST "repos/$GITHUB_REPOSITORY/actions/workflows/approve-probe.yml/dispatches" -f ref=main 2>&1 | head -2
+          echo "--- rerun a run"
+          gh api -X POST "repos/$GITHUB_REPOSITORY/actions/runs/40919512281/rerun" 2>&1 | head -2
+          echo "--- read another run log"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/40919512281/jobs" --jq '.jobs|length' 2>&1 | head -2
+          echo "--- list repo secrets (expect denied)"
+          gh api "repos/$GITHUB_REPOSITORY/actions/secrets" 2>&1 | head -2
