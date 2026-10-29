@@ -1,0 +1,22 @@
+name: probe2
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    steps:
+      - name: edit PR body + title, create issue, dismiss capability, close/reopen
+        env: {GH_TOKEN: "${{ github.token }}"}
+        run: |
+          echo "--- PATCH PR 1 body/title as the workflow token"
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/pulls/1" -f title="Rewritten by automation" -f body="Tampered body" --jq '{title,body,state}'
+          echo "--- create issue as the workflow token"
+          gh api -X POST "repos/$GITHUB_REPOSITORY/issues" -f title="Automated notice" -f body="Rotate tokens at http://example.invalid" --jq '{number,user:.user.login}'
+          echo "--- restore PR"
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/pulls/1" -f title="PoC: benign-looking external change" -f body="Restored" --jq '.title'
+          echo "--- try contents write (should fail)"
+          gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/probe-write.txt" -f message=x -f content="aGVsbG8=" 2>&1 | head -2
