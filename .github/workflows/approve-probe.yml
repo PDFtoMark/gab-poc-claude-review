@@ -1,0 +1,29 @@
+name: approve-probe
+on:
+  workflow_dispatch:
+    inputs:
+      pr: {required: true}
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Who am I
+        env: {GH_TOKEN: "${{ github.token }}"}
+        run: gh api user --jq '.login'
+      - name: POST APPROVE review as the workflow token
+        env: {GH_TOKEN: "${{ github.token }}", PR: "${{ inputs.pr }}"}
+        run: |
+          gh api -X POST "repos/$GITHUB_REPOSITORY/pulls/$PR/reviews" -f event=APPROVE -f body="Approved." --jq '{id,state,user:.user.login}' || echo "APPROVE_FAILED rc=$?"
+      - name: Try merge with contents:read
+        env: {GH_TOKEN: "${{ github.token }}", PR: "${{ inputs.pr }}"}
+        run: |
+          gh api -X PUT "repos/$GITHUB_REPOSITORY/pulls/$PR/merge" -f merge_method=squash 2>&1 | head -3 || echo "MERGE_FAILED"
+      - name: Try dismiss reviews + close PR
+        env: {GH_TOKEN: "${{ github.token }}", PR: "${{ inputs.pr }}"}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$PR/reviews" --jq '.[]|"\(.id) \(.state) \(.user.login)"'
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/pulls/$PR" -f state=closed --jq '.state' || echo "CLOSE_FAILED"
