@@ -13,7 +13,8 @@ jobs:
     steps:
       - name: Who am I
         env: {GH_TOKEN: "${{ github.token }}"}
-        run: gh api user --jq '.login'
+        if: false
+        run: echo skip
       - name: POST APPROVE review as the workflow token
         env: {GH_TOKEN: "${{ github.token }}", PR: "${{ inputs.pr }}"}
         run: |
